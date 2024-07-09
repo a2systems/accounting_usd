@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="accounting_usd_analytic_account_list" model="ir.ui.view">
+	<field name="name">accounting_usd.analytic.account.list</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_list"></field>
+	<field name="arch" type="xml">
+		<field name="debit" position="after">
+			<field name="debit_usd" optional="hide"/>
+		</field>
+		<field name="credit" position="after">
+			<field name="credit_usd" optional="hide"/>
+		</field>
+		<field name="balance" position="after">
+			<field name="balance_usd" optional="hide"/>
+		</field>
+        </field>
+    </record>
+
+
+    <record id="accounting_usd_analytic_line_tree" model="ir.ui.view">
+	<field name="name">accounting_usd.analytic.line.tree</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_line_tree"></field>
+	<field name="arch" type="xml">
+		<field name="amount" position="after">
+			<field name="amount_usd" optional="hide"/>
+			<field name="rate_usd" optional="hide"/>
+		</field>
+        </field>
+    </record>
+
     <record id="accounting_usd_account_account_tree" model="ir.ui.view">
 	<field name="name">accounting_usd.account.account.tree</field>
         <field name="model">account.account</field>

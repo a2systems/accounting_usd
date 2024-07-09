@@ -77,3 +77,64 @@ class AccountMoveLine(models.Model):
     usd_rate = fields.Float('Tipo de cambio USD',compute=_compute_usd_rate)
     balance_usd = fields.Float('Saldo USD',compute=_compute_balance_usd)
     running_balance_usd = fields.Float('Saldo a la Fecha USD',compute=_compute_running_balance_usd)
+
+
+class AccountAnalyticLine(models.Model):
+    _inherit = 'account.analytic.line'
+
+    @api.depends('amount')
+    def _compute_amount_usd(self):
+        for rec in self:
+            res = 0
+            if rec.amount and rec.currency_id.id == rec.company_id.currency_id.id:
+                res = rec.currency_id.with_context(force_company=rec.company_id.id)._convert(
+                        rec.amount,
+                        self.env.ref('base.USD'),
+                        rec.company_id,
+                        rec.date,
+                    )
+            elif rec.currency_id.id == self.env.ref('base.USD').id:
+                res = rec.amount
+            else:
+                res = rec.currency_id.with_context(force_company=rec.company_id.id)._convert(
+                        rec.amount,
+                        self.env.ref('base.USD'),
+                        rec.company_id,
+                        rec.date,
+                    )
+            rec.amount_usd = res 
+
+    def _compute_rate_usd(self):
+        for rec in self:
+            res = 0
+            if rec.currency_id.id == self.env.ref('base.ARS').id:
+                if rec.amount_usd:
+                    res = rec.amount / rec.amount_usd
+            rec.rate_usd = res
+
+
+    amount_usd = fields.Float('Monto USD',compute=_compute_amount_usd,store=True)
+    rate_usd = fields.Float('Tipo de Cambio USD',compute=_compute_rate_usd)
+
+class AccountAnalyticAccount(models.Model):
+    _inherit = 'account.analytic.account'
+
+    def _compute_amounts_usd(self):
+        for rec in self:
+            debits = 0
+            credits = 0
+            lines = self.env['account.analytic.line'].search([('account_id','=',rec.id)])
+            #if lines:
+            #    raise ValidationError(str(lines))
+            for line in lines:
+                if line.amount_usd > 0:
+                    credits = credits + line.amount_usd
+                else:
+                    debits = debits + line.amount_usd
+            rec.debit_usd = abs(debits)
+            rec.credit_usd = credits
+            rec.balance_usd = credits + debits 
+
+    debit_usd = fields.Float('Debito USD',compute=_compute_amounts_usd)
+    credit_usd = fields.Float('Crédito USD',compute=_compute_amounts_usd)
+    balance_usd = fields.Float('Saldo USD',compute=_compute_amounts_usd)
